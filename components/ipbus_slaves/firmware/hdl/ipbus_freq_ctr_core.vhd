@@ -64,7 +64,7 @@ entity ipbus_freq_ctr_core is
 
 begin
 
-	assert N_CLK <= 16
+	assert N_CLK <= 64
 		report "Too many clocks for freq_ctr"
 		severity failure;
 
@@ -103,7 +103,7 @@ begin
 		
 			ctr <= ctr + 1;
 
-			if ctr = X"000000" or (ctr(15 downto 0) = X"0000" and ctrl(4) = '1') then
+			if ctr = X"000000" or (ctr(15 downto 0) = X"0000" and ctrl(6) = '1') then
 				sctr <= tctr;
 				tctr <= X"000000";
 			elsif t = '1' and t_d = '0' then
@@ -121,7 +121,7 @@ begin
 		end if;
 	end process;
 	
-	stat <= "0000000" & svalid & std_logic_vector(sctr) when ctrl(4) = '0' else
+	stat <= "0000000" & svalid & std_logic_vector(sctr) when ctrl(6) = '0' else
 		"0000000" & svalid & std_logic_vector(sctr(15 downto 0)) & X"00";
 	
 end rtl;
