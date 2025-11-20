@@ -69,7 +69,7 @@ entity ipbus_syncreg_v is
 		stb: out std_logic_vector(N_CTRL - 1 downto 0);
 		rstb: out std_logic_vector(N_STAT - 1 downto 0)
 	);
-	
+
 end ipbus_syncreg_v;
 
 architecture rtl of ipbus_syncreg_v is
@@ -94,24 +94,24 @@ begin
 	stat_cyc <= ipb_in.ipb_strobe and not ipb_in.ipb_write and s_cyc;
 	ctrl_cyc_r <= ipb_in.ipb_strobe and not ipb_in.ipb_write and not s_cyc;
 	ctrl_cyc_w <= ipb_in.ipb_strobe and ipb_in.ipb_write and not s_cyc;
-	
+
 -- Avoid race between data and handshake (optimised away if ULTRA_SAFE is false)
 
 	cd <= ipb_in.ipb_wdata when rising_edge(clk);
-	cstab <= '1' when cd = ipb_in.ipb_wdata else '0';	
+	cstab <= '1' when cd = ipb_in.ipb_wdata else '0';
 
 -- Write registers
-	
+
 	w_gen: for i in N_CTRL - 1 downto 0 generate
-	
+
 		signal cwe: std_logic;
 		signal ctrl_m: std_logic_vector(31 downto 0);
-		
+
 	begin
-	
+
 		cwe <= '1' when ctrl_cyc_w = '1' and sel = i and rdy = '1' and (cstab = '1' or not ULTRA_SAFE) else '0';
 		ctrl_m <= ipb_in.ipb_wdata and qmask(i);
-		
+
 		wsync: entity work.syncreg_w
 			port map(
 				m_clk => clk,
@@ -126,15 +126,18 @@ begin
 			);
 
 	end generate;
-	
+
 	cq(2 ** ADDR_WIDTH - 1 downto N_CTRL) <= (others => (others => '0'));
 
--- Read register	
-	
-	ds <= d(sel) when sel < N_STAT else (others => '0');
-	
+-- Read register
+
+    -- Generate wrapper prevents simulation errors if component has 0 status registers
+    ds_gen: if (N_STAT > 0) generate
+        ds <= d(sel) when sel < N_STAT else (others => '0');
+    end generate;
+
 	sre <= stat_cyc and rdy;
-	
+
 	rsync: entity work.syncreg_r
 		generic map(
 			ULTRA_SAFE => ULTRA_SAFE
@@ -162,7 +165,7 @@ begin
 			end if;
 		end loop;
 	end process;
-	
+
 -- Interlock to catch situation where strobe is dropped in middle of write / read cycle
 
 	process(clk)
@@ -172,16 +175,16 @@ begin
 			pend <= (pend or (not rdy and rdy_d)) and ipb_in.ipb_strobe and not rst and not ack;
 		end if;
 	end process;
-	
+
 	rdy <= and_reduce(crdy) and srdy;
 	ack <= (or_reduce(cack) or sack) and pend;
-	
+
 -- ipbus interface
-	
+
 	ipb_out.ipb_rdata <= cq(sel) when ctrl_cyc_r = '1' else sq;
 	ipb_out.ipb_ack <= ((ctrl_cyc_w or stat_cyc) and ack) or (ctrl_cyc_r and rdy);
 	ipb_out.ipb_err <= '0';
-	
+
 	q <= cq(N_CTRL - 1 downto 0);
-	
+
 end rtl;
