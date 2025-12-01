@@ -76,27 +76,44 @@ architecture rtl of ipbus_freq_ctr_core is
 	signal sel: integer range 0 to 2 ** ADDR_WIDTH - 1 := 0;
 	signal ctr, tctr, sctr: unsigned(23 downto 0) := X"000000";
 	signal cd: std_logic_vector(2 ** ADDR_WIDTH - 1 downto 0) := (others => '0');
-	signal t_in, t, t_d, valid, svalid: std_logic;
+	signal cd_sync : std_logic_vector(cd'range);
+	signal t, t_d, valid, svalid: std_logic;
 	
-	attribute SHREG_EXTRACT: string;
-	attribute SHREG_EXTRACT of t_in: signal is "no"; -- Synchroniser not to be optimised into shreg
-
 begin
 		
 	sel <= to_integer(unsigned(ctrl(ADDR_WIDTH - 1 downto 0))) when ADDR_WIDTH > 0 else 0;
 	
 	cd(N_CLK - 1 downto 0) <= clkdiv;
 	cd(2 ** ADDR_WIDTH - 1 downto N_CLK) <= (others => '0');
-	
-	process(clk_ref) -- Synchroniser
-	begin
-		if rising_edge(clk_ref) then
-			t_in <= cd(sel);
-			t <= t_in;
-			t_d <= t;
-		end if;
-	end process;
-	
+
+        -- Synchronisers.
+        -- NOTE: In order to avoid having the MUX (i.e., combinational
+        -- logic) feeding into the CDC (into the clk_ref domain), we
+        -- sacrifice a few flip-flops on synchronising all (instead of
+        -- only the selected) input signal.
+        gen_syncs : for i in cd'range generate
+          signal cd_d  : std_logic;
+          signal cd_dd : std_logic;
+          attribute SHREG_EXTRACT: string;
+          attribute SHREG_EXTRACT of cd_d  : signal is "no";
+          attribute SHREG_EXTRACT of cd_dd : signal is "no";
+          attribute ASYNC_REG: string;
+          attribute ASYNC_REG of cd_d  : signal is "yes";
+          attribute ASYNC_REG of cd_dd : signal is "yes";
+        begin
+          sync : process(clk_ref)
+          begin
+            if rising_edge(clk_ref) then
+              cd_d    <= cd(i);
+              cd_dd   <= cd_d;
+              cd_sync(i) <= cd_dd;
+            end if;
+          end process sync;
+        end generate;
+
+        t   <= cd_sync(sel);
+        t_d <= t when rising_edge(clk_ref);
+
 	process(clk_ref) -- Counters
 	begin
 		if rising_edge(clk_ref) then
