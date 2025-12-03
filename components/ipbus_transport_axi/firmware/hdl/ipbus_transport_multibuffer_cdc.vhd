@@ -71,24 +71,27 @@ architecture rtl of ipbus_transport_multibuffer_cdc is
 
   attribute ASYNC_REG: string;
 
-  attribute ASYNC_REG of rst_cdc1 : signal is "TRUE";
   attribute ASYNC_REG of rst_cdc2 : signal is "TRUE";
+  attribute ASYNC_REG of rst_mstclk : signal is "TRUE";
 
-  attribute ASYNC_REG of pkt_done_cdc1 : signal is "TRUE";
   attribute ASYNC_REG of pkt_done_cdc2 : signal is "TRUE";
+  attribute ASYNC_REG of pkt_done_mstclk : signal is "TRUE";
 
-  attribute ASYNC_REG of buf_filled_cdc1 : signal is "TRUE";
+  -- NOTE: The double-flop of the buffer-filled signals is not pretty,
+  -- but should be okay because there is no real relationship between
+  -- the different bits.
   attribute ASYNC_REG of buf_filled_cdc2 : signal is "TRUE";
+  attribute ASYNC_REG of buf_filled_ipbclk : signal is "TRUE";
 
 begin
 
   process (master_clk)
   begin
     if rising_edge(master_clk) then
-      rst_cdc2 <= rst_cdc1;
+      rst_cdc2   <= rst_cdc1;
       rst_mstclk <= rst_cdc2;
 
-      pkt_done_cdc2 <= pkt_done_cdc1;
+      pkt_done_cdc2   <= pkt_done_cdc1;
       pkt_done_mstclk <= pkt_done_cdc2;
 
       buf_filled_cdc1 <= buf_filled_mstclk;
