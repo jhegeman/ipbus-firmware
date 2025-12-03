@@ -86,33 +86,33 @@ begin
 	cd(N_CLK - 1 downto 0) <= clkdiv;
 	cd(2 ** ADDR_WIDTH - 1 downto N_CLK) <= (others => '0');
 
-        -- Synchronisers.
-        -- NOTE: In order to avoid having the MUX (i.e., combinational
-        -- logic) feeding into the CDC (into the clk_ref domain), we
-        -- sacrifice a few flip-flops on synchronising all (instead of
-        -- only the selected) input signal.
-        gen_syncs : for i in cd'range generate
-          signal cd_d  : std_logic;
-          signal cd_dd : std_logic;
-          attribute SHREG_EXTRACT: string;
-          attribute SHREG_EXTRACT of cd_d  : signal is "no";
-          attribute SHREG_EXTRACT of cd_dd : signal is "no";
-          attribute ASYNC_REG: string;
-          attribute ASYNC_REG of cd_d  : signal is "yes";
-          attribute ASYNC_REG of cd_dd : signal is "yes";
-        begin
-          sync : process(clk_ref)
-          begin
-            if rising_edge(clk_ref) then
-              cd_d    <= cd(i);
-              cd_dd   <= cd_d;
-              cd_sync(i) <= cd_dd;
-            end if;
-          end process sync;
-        end generate;
+	-- Synchronisers.
+	-- NOTE: In order to avoid having the MUX (i.e., combinational
+	-- logic) feeding into the CDC (into the clk_ref domain), we
+	-- sacrifice a few flip-flops on synchronising all (instead of
+	-- only the selected) input signal.
+	gen_syncs : for i in cd'range generate
+		signal cd_d  : std_logic;
+		signal cd_dd : std_logic;
+		attribute SHREG_EXTRACT: string;
+		attribute SHREG_EXTRACT of cd_d  : signal is "no";
+		attribute SHREG_EXTRACT of cd_dd : signal is "no";
+		attribute ASYNC_REG: string;
+		attribute ASYNC_REG of cd_d  : signal is "yes";
+		attribute ASYNC_REG of cd_dd : signal is "yes";
+	begin
+		sync : process(clk_ref)
+		begin
+			if rising_edge(clk_ref) then
+				cd_d    <= cd(i);
+				cd_dd   <= cd_d;
+				cd_sync(i) <= cd_dd;
+			end if;
+		end process sync;
+	end generate;
 
-        t   <= cd_sync(sel);
-        t_d <= t when rising_edge(clk_ref);
+	t   <= cd_sync(sel);
+	t_d <= t when rising_edge(clk_ref);
 
 	process(clk_ref) -- Counters
 	begin
