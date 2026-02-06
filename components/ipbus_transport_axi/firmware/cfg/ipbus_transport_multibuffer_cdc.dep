@@ -23,4 +23,5 @@
 #
 #-------------------------------------------------------------------------------
 
-src ipbus_axi_decl.vhd --vhdl2008
+include -c components/ipbus_core ipbus_trans_decl.dep
+src                              ipbus_transport_multibuffer_cdc.vhd

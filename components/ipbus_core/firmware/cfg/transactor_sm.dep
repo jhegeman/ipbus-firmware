@@ -23,4 +23,5 @@
 #
 #-------------------------------------------------------------------------------
 
-src ipbus_axi_decl.vhd --vhdl2008
+include ipbus_package.dep
+src     transactor_sm.vhd
