@@ -23,4 +23,10 @@
 #
 #-------------------------------------------------------------------------------
 
-src ipbus_axi_decl.vhd --vhdl2008
+include                          ipbus_axi_decl.dep
+include                          ipbus_transport_ram_if.dep
+include -c components/ipbus_core ipbus_trans_decl.dep
+src                              ipbus_transport_axi_if.vhd --vhdl2008
+
+? toolset.lower() == "vivado" ? src ../cgn/axi_bram_ctrl_0.xci
+

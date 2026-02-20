@@ -23,4 +23,7 @@
 #
 #-------------------------------------------------------------------------------
 
-src ipbus_axi_decl.vhd --vhdl2008
+
+include                                   pcie_int_gen_msix.dep
+include -c components/ipbus_transport_axi ipbus_axi_decl.dep
+src                                       pcie_xdma_bypass_axi_us_if.vhd
